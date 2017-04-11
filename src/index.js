@@ -3,15 +3,22 @@ var ctx;
 var data;
 window.onload = function (main) {
     canvas = document.createElement('canvas');
-    canvas.width = canvas.height = 200;
+    canvas.width = canvas.height = 3 * 120 + 20;
     ctx = canvas.getContext('2d');
     document.body.appendChild(canvas);
     init();
     tick();
 };
 var init = function () {
-    data = new Tile(20, 20);
-    data.flip(data.NOUGHT);
+    if (data == null) {
+        data = [];
+        for (var i = 0; i < 9; i++) {
+            var x = (i % 3) * 120 + 20;
+            var y = Math.floor(i / 3) * 120 + 20;
+            data.push(new Tile(x, y));
+        }
+    }
+    data[0].flip(data[0].NOUGHT);
 };
 var tick = function () {
     window.requestAnimationFrame(tick);
@@ -19,11 +26,15 @@ var tick = function () {
     render();
 };
 var update = function () {
-    data.update();
+    for (var i = data.length; i--;) {
+        data[i].update();
+    }
 };
 var render = function () {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    data.draw(ctx);
+    for (var i = data.length; i--;) {
+        data[i].draw(ctx);
+    }
 };
 var Tile = (function () {
     function Tile(x, y) {
@@ -33,7 +44,7 @@ var Tile = (function () {
         this.y = y;
         if (this.tile == null) {
             var _c = document.createElement('canvas');
-            _c.width = canvas.height = 200;
+            _c.width = canvas.height = 100;
             var _ctx = _c.getContext("2d");
             _ctx.fillStyle = "skyblue";
             _ctx.lineWidth = 4;
@@ -66,21 +77,22 @@ var Tile = (function () {
     };
     Tile.prototype.update = function () {
         if (this.anim > 0) {
-            this.anim -= 0.02;
+            this.anim -= 0.08;
         }
     };
     ;
     Tile.prototype.draw = function (ctx) {
         if (this.anim <= 0) {
-            return ctx.drawImage(this.tile, this.x, this.y);
+            ctx.drawImage(this.tile, this.x, this.y);
+            return;
         }
-        var res = 2;
+        var res = 4;
         var t = this.anim > 0.5 ? this.BLANK : this.tile;
-        var p = -this.anim + 1;
+        var p = -Math.abs(2 * this.anim - 1) + 1;
         for (var i = 0; i < 100; i += res) {
-            ctx.drawImage(t, i, 0, res, 100, this.x + i - p * i, this.y, res, 100);
+            var j = this.anim > 0.5 ? 100 - i : i;
+            ctx.drawImage(t, i, 0, res, 100, this.x + i - p * i + 50 * p, this.y - j * p * 0.2, res, 100 + j * p * 0.4);
         }
-        ctx.drawImage(t, this.x, this.y);
     };
     ;
     return Tile;

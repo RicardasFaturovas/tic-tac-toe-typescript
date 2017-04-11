@@ -7,11 +7,8 @@ let data;
 
 window.onload = main => {
   canvas = document.createElement('canvas');
-  canvas.width = canvas.height = 200;
+  canvas.width = canvas.height = 3*120+20;
   ctx = canvas.getContext('2d');
-
-
-
   document.body.appendChild(canvas);
 
 
@@ -20,8 +17,15 @@ window.onload = main => {
 };
 
 let init = () => {
-  data = new Tile(20,20);
-  data.flip(data.NOUGHT);
+  if(data==null){
+    data = [];
+    for(let i=0; i<9; i++){
+      let x = (i % 3)*120+20;
+      let y = Math.floor(i/3)*120+20;
+      data.push(new Tile(x,y));
+    }
+  }
+  data[0].flip(data[0].NOUGHT);
 };
 
 let tick = () => {
@@ -32,12 +36,16 @@ let tick = () => {
 };
 
 let update = () => {
-  data.update();
+  for(let i = data.length; i--;){
+    data[i].update();
+  }
 }
 
 let render = () => {
   ctx.clearRect(0,0, canvas.width, canvas.height);
-  data.draw(ctx);
+  for(let i= data.length; i--;){
+    data[i].draw(ctx);
+  }
 }
 
 class Tile  {
@@ -55,7 +63,7 @@ class Tile  {
 
     if(this.tile==null){
       let _c= document.createElement('canvas');
-      _c.width = canvas.height = 200;
+      _c.width = canvas.height = 100;
       let _ctx = _c.getContext("2d");
 
       _ctx.fillStyle = "skyblue"
@@ -97,21 +105,26 @@ class Tile  {
 
   update() {
     if(this.anim > 0){
-      this.anim -=0.02;
+      this.anim -=0.08;
     }
   };
 
   draw(ctx) {
     if(this.anim<=0){
-      return ctx.drawImage(this.tile,this.x,this.y);
+     ctx.drawImage(this.tile,this.x,this.y);
+     return;
     }
-    let res=2;
-    let t = this.anim > 0.5 ?this.BLANK : this.tile;
-    let p = -this.anim+1;
+    const res = 4;
+    const t = this.anim > 0.5 ? this.BLANK : this.tile;
+    const p =  -Math.abs(2*this.anim-1)+1;
     for(let i=0; i<100; i+=res){
-      ctx.drawImage(t, i, 0, res, 100, this.x+i-p*i, this.y, res, 100)
-    }
-    ctx.drawImage(t,this.x,this.y);
 
+      let j = this.anim > 0.5 ? 100 - i : i;
+      ctx.drawImage(t, i, 0, res, 100,
+        this.x + i - p*i+50*p,
+        this.y - j*p*0.2,
+        res,
+        100 + j*p*0.4);
+    }
   };
 }
