@@ -1,7 +1,7 @@
 {
-  "name": "typescript-webpack-starter",
+  "name": "Tic-tac-toe",
   "version": "0.2.0",
-  "description": "A damn simple starter for Typescript and Webpack",
+  "description": "simple Tic-tac-toe game ",
   "main": "src/index.ts",
   "scripts": {
     "start": "npm run server:dev",
@@ -18,7 +18,7 @@
     "type": "git",
     "url": "https://github.com/emyann/typescript-webpack-starter"
   },
-  "author": "yrenaudin",
+  "author": "RicardasFaturovas",
   "license": "ISC",
   "devDependencies": {
     "@types/lodash": "^4.14.50",
