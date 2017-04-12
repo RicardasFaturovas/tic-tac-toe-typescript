@@ -1,8 +1,7 @@
 let canvas;
 let ctx;
-
 let data;
-
+let player;
 //import styles from 'style-loader!css-loader! ';
 
 window.onload = main => {
@@ -11,6 +10,7 @@ window.onload = main => {
   ctx = canvas.getContext('2d');
   document.body.appendChild(canvas);
 
+  canvas.addEventListener("mousedown",mouseDown);
 
   init();
   tick();
@@ -25,7 +25,7 @@ let init = () => {
       data.push(new Tile(x,y));
     }
   }
-  data[0].flip(data[0].NOUGHT);
+  player = Tile.prototype.NOUGHT;
 };
 
 let tick = () => {
@@ -34,6 +34,88 @@ let tick = () => {
   update();
   render();
 };
+
+
+function Tile (x,y) {
+	let tile = Tile.prototype.BLANK;
+	let anim = 0;
+
+
+    this.x = x;
+    this.y = y;
+
+    if(tile==null){
+      let _c= document.createElement('canvas');
+      _c.width = _c.height = 100;
+      let _ctx = _c.getContext("2d");
+
+      _ctx.fillStyle = "skyblue"
+      _ctx.lineWidth = 4;
+      _ctx.strokeStyle = "white";
+
+      //Blank Tile
+      _ctx.fillRect(0,0,100,100);
+      Tile.prototype.BLANK = new Image();
+      Tile.prototype.BLANK.src = _c.toDataURL();
+
+      //Kappa Tile
+      Tile.prototype.NOUGHT = new Image(20,20);
+      Tile.prototype.NOUGHT.src = 'http://i.picresize.com/images/2017/04/12/TqxYX.png';
+      Tile.prototype.NOUGHT.onload = function() {
+        _ctx.drawImage(Tile.prototype.NOUGHT, 20, 20);
+      };
+
+
+      //Cross Tile
+      Tile.prototype.CROSS = new Image();
+      Tile.prototype.CROSS.src = 'http://i.picresize.com/images/2017/04/12/g8RX.png';
+      Tile.prototype.CROSS.onload = function() {
+        _ctx.drawImage(Tile.prototype.CROSS, 20, 20);
+      };
+
+      tile = Tile.prototype.BLANK;
+    }
+
+
+  this.hasData = () => {
+    return tile!==Tile.prototype.BLANK;
+  }
+
+  this.flip = (next) => {
+    tile = next;
+    anim = 1;
+  }
+
+  this.update = () => {
+    if(anim > 0){
+      anim -=0.08;
+    }
+  };
+
+  this.draw = (ctx) => {
+    if(anim<=0){
+     ctx.drawImage(tile,x,y);
+     return;
+    }
+    const res = 4;
+    let t;
+
+    if(anim > 0.5){
+      t = this.BLANK;
+    } else t = tile
+
+    const p =  -Math.abs(2*anim-1)+1;
+    for(let i=0; i<100; i+=res){
+
+      let j = anim > 0.5 ? 100 - i : i;
+      ctx.drawImage(t, i, 0, res, 100,
+        x + i - p*i+50*p,
+        y - j*p*0.2,
+        res,
+        100 + j*p*0.4);
+    }
+  };
+}
 
 let update = () => {
   for(let i = data.length; i--;){
@@ -48,83 +130,24 @@ let render = () => {
   }
 }
 
-class Tile  {
-  x: any;
-  y: any;
-  BLANK;
-  NOUGHT;
-  CROSS;
-  tile = this.BLANK;
-  anim = 0;
+let mouseDown = (evt) => {
+  const el = evt.target;
 
-  constructor(x,y){
-    this.x = x;
-    this.y = y;
+  const positionX = evt.clientX - el.offsetLeft;
+  const positionY = evt.clientY - el.offsetTop;
 
-    if(this.tile==null){
-      let _c= document.createElement('canvas');
-      _c.width = canvas.height = 100;
-      let _ctx = _c.getContext("2d");
+  if(positionX % 120 >= 20 && positionY % 120 >= 20){
+    let index = Math.floor(positionX/120);
+    index += Math.floor(positionY/120)*3;
 
-      _ctx.fillStyle = "skyblue"
-      _ctx.lineWidth = 4;
-      _ctx.strokeStyle = "white";
-
-      //Blank Tile
-      _ctx.fillRect(0,0,100,100);
-      this.BLANK = new Image();
-      this.BLANK.src = _c.toDataURL();
-
-      //Nought Tile
-      _ctx.fillRect(0, 0, 100, 100);
-      _ctx.beginPath();
-      _ctx.arc(50,50,30,0,2*Math.PI);
-      _ctx.stroke();
-      this.NOUGHT = new Image();
-      this.NOUGHT.src = _c.toDataURL();
-
-      //Cross Tile
-      _ctx.fillRect(0,0,100,100);
-      _ctx.beginPath();
-      _ctx.moveTo(20, 20);
-      _ctx.lineTo(80, 80);
-      _ctx.moveTo(80, 20);
-      _ctx.lineTo(20, 80);
-      _ctx.stroke();
-      this.CROSS = new Image();
-      this.CROSS.src = _c.toDataURL();
-
-      this.tile = this.BLANK;
+    if(data[index].hasData()){
+      return;
     }
-  };
+    data[index].flip(player);
 
-  flip(next) {
-    this.tile = next;
-    this.anim = 1;
+    if(player === Tile.prototype.NOUGHT){
+      player = Tile.prototype.CROSS;
+    } else player = Tile.prototype.NOUGHT
+    console.log(index);
   }
-
-  update() {
-    if(this.anim > 0){
-      this.anim -=0.08;
-    }
-  };
-
-  draw(ctx) {
-    if(this.anim<=0){
-     ctx.drawImage(this.tile,this.x,this.y);
-     return;
-    }
-    const res = 4;
-    const t = this.anim > 0.5 ? this.BLANK : this.tile;
-    const p =  -Math.abs(2*this.anim-1)+1;
-    for(let i=0; i<100; i+=res){
-
-      let j = this.anim > 0.5 ? 100 - i : i;
-      ctx.drawImage(t, i, 0, res, 100,
-        this.x + i - p*i+50*p,
-        this.y - j*p*0.2,
-        res,
-        100 + j*p*0.4);
-    }
-  };
 }
