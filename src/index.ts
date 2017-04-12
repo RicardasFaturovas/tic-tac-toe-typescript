@@ -1,8 +1,15 @@
+import Tile from "./gameObjects/tile";
+import AIPlayer from "./gameObjects/ai";
+
 let canvas;
 let ctx;
 let data;
 let player;
-//import styles from 'style-loader!css-loader! ';
+let ai;
+
+let isPlayer;
+let aiMoved;
+let winner;
 
 window.onload = main => {
   canvas = document.createElement('canvas');
@@ -26,6 +33,13 @@ let init = () => {
     }
   }
   player = Tile.prototype.NOUGHT;
+  isPlayer = player === Tile.prototype.NOUGHT;
+  aiMoved = false;
+
+  ai = new AIPlayer(data);
+  ai.setSeed(player === Tile.prototype.NOUGHT ? Tile.prototype.CROSS : Tile.prototype.NOUGHT);
+
+  console.log(ai.move());
 };
 
 let tick = () => {
@@ -35,92 +49,38 @@ let tick = () => {
   render();
 };
 
-
-function Tile (x,y) {
-	let tile = Tile.prototype.BLANK;
-	let anim = 0;
-
-
-    this.x = x;
-    this.y = y;
-
-    if(tile==null){
-      let _c= document.createElement('canvas');
-      _c.width = _c.height = 100;
-      let _ctx = _c.getContext("2d");
-
-      _ctx.fillStyle = "skyblue"
-      _ctx.lineWidth = 4;
-      _ctx.strokeStyle = "white";
-
-      //Blank Tile
-      _ctx.fillRect(0,0,100,100);
-      Tile.prototype.BLANK = new Image();
-      Tile.prototype.BLANK.src = _c.toDataURL();
-
-      //Kappa Tile
-      Tile.prototype.NOUGHT = new Image(20,20);
-      Tile.prototype.NOUGHT.src = 'http://i.picresize.com/images/2017/04/12/TqxYX.png';
-      Tile.prototype.NOUGHT.onload = function() {
-        _ctx.drawImage(Tile.prototype.NOUGHT, 20, 20);
-      };
-
-
-      //Cross Tile
-      Tile.prototype.CROSS = new Image();
-      Tile.prototype.CROSS.src = 'http://i.picresize.com/images/2017/04/12/g8RX.png';
-      Tile.prototype.CROSS.onload = function() {
-        _ctx.drawImage(Tile.prototype.CROSS, 20, 20);
-      };
-
-      tile = Tile.prototype.BLANK;
-    }
-
-
-  this.hasData = () => {
-    return tile!==Tile.prototype.BLANK;
-  }
-
-  this.flip = (next) => {
-    tile = next;
-    anim = 1;
-  }
-
-  this.update = () => {
-    if(anim > 0){
-      anim -=0.08;
-    }
-  };
-
-  this.draw = (ctx) => {
-    if(anim<=0){
-     ctx.drawImage(tile,x,y);
-     return;
-    }
-    const res = 4;
-    let t;
-
-    if(anim > 0.5){
-      t = this.BLANK;
-    } else t = tile
-
-    const p =  -Math.abs(2*anim-1)+1;
-    for(let i=0; i<100; i+=res){
-
-      let j = anim > 0.5 ? 100 - i : i;
-      ctx.drawImage(t, i, 0, res, 100,
-        x + i - p*i+50*p,
-        y - j*p*0.2,
-        res,
-        100 + j*p*0.4);
-    }
-  };
-}
-
 let update = () => {
+  let activeAnim = false;
+
   for(let i = data.length; i--;){
     data[i].update();
+    activeAnim = activeAnim || data[i].active();
   }
+  if(!activeAnim){
+    if(!aiMoved && !isPlayer){
+      let move = ai.move();
+      if(move === -1){
+        winner = true;
+      } else data[move].flip(ai.getSeed());
+      isPlayer = true;
+    }
+
+    if (winner && !aiMoved) {
+				if (winner === true) {
+					 console.log("The game was a draw!");
+				} else if (winner === Tile.prototype.NOUGHT) {
+					 console.log("The Kappa player won!");
+				} else {
+					 console.log("The PogChamp AI won!");
+				}
+			}
+    aiMoved = true;
+  } else {
+			if (aiMoved){
+         winner = ai.hasWinner();
+      }
+			aiMoved = false;
+	}
 }
 
 let render = () => {
@@ -131,6 +91,7 @@ let render = () => {
 }
 
 let mouseDown = (evt) => {
+  if(!isPlayer) return;
   const el = evt.target;
 
   const positionX = evt.clientX - el.offsetLeft;
@@ -144,10 +105,6 @@ let mouseDown = (evt) => {
       return;
     }
     data[index].flip(player);
-
-    if(player === Tile.prototype.NOUGHT){
-      player = Tile.prototype.CROSS;
-    } else player = Tile.prototype.NOUGHT
-    console.log(index);
+    isPlayer = false;
   }
 }
