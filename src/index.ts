@@ -1,5 +1,6 @@
-import Tile from "./gameObjects/tile";
+//import Tile from "./gameObjects/tile";
 import AIPlayer from "./gameObjects/ai";
+import Tile from "./gameObjects/tile"
 
 let canvas;
 let ctx;
@@ -11,7 +12,7 @@ let isPlayer;
 let aiMoved;
 let winner;
 
-window.onload = main => {
+window.onload = () => {
   canvas = document.createElement('canvas');
   canvas.width = canvas.height = 3*120+20;
   ctx = canvas.getContext('2d');
@@ -32,12 +33,13 @@ let init = () => {
       data.push(new Tile(x,y));
     }
   }
-  player = Tile.prototype.NOUGHT;
-  isPlayer = player === Tile.prototype.NOUGHT;
+
+  player = Tile.NOUGHT;
+  isPlayer = player === Tile.NOUGHT;
   aiMoved = false;
 
   ai = new AIPlayer(data);
-  ai.setSeed(player === Tile.prototype.NOUGHT ? Tile.prototype.CROSS : Tile.prototype.NOUGHT);
+  ai.setSeed(player === Tile.NOUGHT ? Tile.CROSS : Tile.NOUGHT);
 
   console.log(ai.move());
 };
@@ -68,7 +70,7 @@ let update = () => {
     if (winner && !aiMoved) {
 				if (winner === true) {
 					 console.log("The game was a draw!");
-				} else if (winner === Tile.prototype.NOUGHT) {
+				} else if (winner === Tile.NOUGHT) {
 					 console.log("The Kappa player won!");
 				} else {
 					 console.log("The PogChamp AI won!");
@@ -90,7 +92,7 @@ let render = () => {
   }
 }
 
-let mouseDown = (evt) => {
+let mouseDown = evt => {
   if(!isPlayer) return;
   const el = evt.target;
 
