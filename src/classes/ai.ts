@@ -2,44 +2,38 @@ import Tile from "./tile";
 
 export default class AIPlayer {
   public data;
-  public seed;
-  public opponentSeed;
-  static winningPatterns = (function(){
-    let winPat = ["111000000", "000111000", "000000111",
-                  "100100100", "010010010", "001001001",
-                  "100010001", "001010100"]
-
-    let r = new Array(winPat.length);
-    for(let i = winPat.length; i--;){
-      r[i] = parseInt(winPat[i], 2)
-    }
-    return r;
-  })();
+  public aiSeed;
+  public playerSeed;
+  static winningPatterns = [0b111000000, 0b000111000, 0b000000111,
+                0b100100100, 0b010010010, 0b001001001,
+                0b100010001, 0b001010100]
 
   constructor(data) {
     this.data = data;
   }
 
-  setSeed(_seed)  {
-    this.seed = _seed
-    if(_seed === Tile.NOUGHT){
-      this.opponentSeed = Tile.CROSS;
-    } else this.opponentSeed = Tile.NOUGHT
+  setSeed(value) {
+    this.aiSeed = value
+    if(value === Tile.NOUGHT) {
+      this.playerSeed = Tile.CROSS;
+    } else this.playerSeed = Tile.NOUGHT
   }
 
   getSeed() {
-    return this.seed;
+    return this.aiSeed;
   }
 
   move() {
-    return this.minimax(2,this.seed)[1];
+    const optimalDepth = 2;
+    // returns the best index of the minimax function
+    return this.minimax(optimalDepth,this.aiSeed)[1];
   }
 
   hasWinner() {
-		if (this.hasWon(this.seed)) {
-			return this.seed;
-		} if (this.hasWon(this.opponentSeed)) {
-			return this.opponentSeed;
+		if (this.hasWon(this.aiSeed)) {
+			return this.aiSeed;
+		} if (this.hasWon(this.playerSeed)) {
+			return this.playerSeed;
 		}
 		return false;
 	}
@@ -47,68 +41,80 @@ export default class AIPlayer {
   hasWon(player) {
     let pattern = 0;
 
-    for(let i = this.data.length; i--;){
-      if(this.data[i].equals(player)){
-        pattern |= (1 << i);
+    this.data.forEach((element,index) => {
+      if(element.equals(player)) {
+        pattern |= (1 << index); // construct a bit pattern based on the board layout
       }
-    }
+    })
 
+    // checks if the pattern matches winning patterns
     for(let i = AIPlayer.winningPatterns.length; i--;){
       let winningPattern = AIPlayer.winningPatterns[i];
-      if((pattern & winningPattern) === winningPattern) return true;
+      if(pattern === winningPattern) return true;
     }
+
     return false;
   }
 
+  // function uses a recurssive minimax algorithm which goes through
+  // a tree of all the possible situations of the game.
+  // * each node will have a calculated score
+  // * depth limits the accuracy of the AI
+  // * for Tic tac toe a general depth of 2 is enough to make the AI accurate
   minimax(depth, player) {
     let nextMoves = this.getValidMoves();
-    let best;
+    let bestScore;
     let current;
     let bestIndex = -1;
 
-    if(player === this.seed) {
-      best = -1e100;
-    } else best = 1e100;
+    // assign best score to a large number if the current player is the AI
+    // or to a small number if it is the human player
+    if(player === this.aiSeed) {
+      bestScore = -1e100;
+    } else bestScore = 1e100;
 
-    if(nextMoves.length === 0 || depth === 0){
-      best = this.evaluate();
+    // evaluates the score on all 8 possible lines if no moves are left
+    if(nextMoves.length === 0 || depth === 0) {
+      bestScore = this.evaluate();
     } else {
       for(let i = nextMoves.length; i--;){
-        let m = nextMoves[i];
-        this.data[m].set(player);
+        let nextMove = nextMoves[i];
+        this.data[nextMove].setNextTile(player);
 
-        if(player === this.seed){
-          current = this.minimax(depth-1, this.opponentSeed)[0];
-          if(current > best){
-            best = current;
-            bestIndex = m;
+        if(player === this.aiSeed) {
+          current = this.minimax(depth-1, this.playerSeed)[0]; // go up the tree by 1 level
+          if(current > bestScore){
+            bestScore = current;
+            bestIndex = nextMove;
           }
         } else {
-          current = this.minimax(depth-1, this.seed)[0];
-          if(current < best){
-            best = current;
-            bestIndex = m;
+          current = this.minimax(depth-1, this.aiSeed)[0]; // go up the tree by 1 level
+          if(current < bestScore){
+            bestScore = current;
+            bestIndex = nextMove;
           }
         }
-        this.data[m].set(Tile.BLANK)
+        this.data[nextMove].setNextTile(Tile.BLANK)
       }
     }
-    return [best, bestIndex];
+    return [bestScore, bestIndex];
   }
 
   getValidMoves() {
     let moveList = [];
-    if(this.hasWon(this.seed) || this.hasWon(this.opponentSeed)){
+    if(this.hasWon(this.aiSeed) || this.hasWon(this.playerSeed)) {
       return moveList;
     }
-    for(let i = this.data.length; i--;){
-      if(!this.data[i].hasData()){
+    for(let i = this.data.length; i--;) {
+      if(!this.data[i].hasData()) {
         moveList.push(i);
       }
     }
     return moveList;
   }
 
+  // heuristic board evaluation function
+  // evaluates each line seperately and adds the scores
   evaluate() {
     let score = 0;
     score += this.evaluateLine(0,1,2); //top line
@@ -122,39 +128,45 @@ export default class AIPlayer {
     return score;
   }
 
+  // single line evaluation function
+  // calculates score based on theses rules:
+  // * +100 for EACH 3-in-a-line for computer.
+  // * +10 for EACH two-in-a-line (with a empty cell) for computer.
+  // * +1 for EACH one-in-a-line (with two empty cells) for computer.
+  // * exactly same but negative scores for opponent
   evaluateLine(index1,index2,index3) {
     let score = 0;
 
-    if(this.data[index1].equals(this.seed)) {
+    if(this.data[index1].equals(this.aiSeed)) {
       score = 1;
-    } else if(this.data[index1].equals(this.opponentSeed)) {
+    } else if(this.data[index1].equals(this.playerSeed)) {
       score = -1;
     }
 
-    if(this.data[index2].equals(this.seed)) {
-      if(score === 1){
+    if(this.data[index2].equals(this.aiSeed)) {
+      if(score === 1) {
         score = 10;
-      } else if(score === -1){
+      } else if(score === -1) {
         return 0;
       } else score = 1;
-    } else if(this.data[index2].equals(this.opponentSeed)) {
-      if(score === -1){
+    } else if(this.data[index2].equals(this.playerSeed)) {
+      if(score === -1) {
         score = -10;
-      } else if(score === 1){
+      } else if(score === 1) {
         return 0;
       } else score = -1;
     }
 
-    if(this.data[index3].equals(this.seed)) {
-      if(score > 0){
+    if(this.data[index3].equals(this.aiSeed)) {
+      if(score > 0) {
         score *=10;
-      } else if (score < 0){
+      } else if (score < 0) {
         return 0;
       } else score = 1;
-    } else if(this.data[index3].equals(this.opponentSeed)) {
-      if(score < 0){
+    } else if(this.data[index3].equals(this.playerSeed)) {
+      if(score < 0) {
         score *=10;
-      } else if (score > 0){
+      } else if (score > 0) {
         return 0;
       } else score = -1;
     }

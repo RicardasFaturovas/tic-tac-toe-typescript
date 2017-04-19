@@ -1,12 +1,14 @@
-//import Tile from "./gameObjects/tile";
-import AIPlayer from "./gameObjects/ai";
-import Tile from "./gameObjects/tile"
+import AIPlayer from "./classes/ai";
+import Tile from "./classes/tile"
 
 let canvas;
+let button;
+let buttonText;
 let ctx;
 let data;
 let player;
 let ai;
+
 
 let isPlayer;
 let aiMoved;
@@ -18,7 +20,13 @@ window.onload = () => {
   ctx = canvas.getContext('2d');
   document.body.appendChild(canvas);
 
-  canvas.addEventListener("mousedown",mouseDown);
+  canvas.addEventListener('mousedown',mouseDown);
+
+  button = document.createElement('button');
+  button.addEventListener('mousedown', reset);
+  buttonText = document.createTextNode('RESET');
+  button.appendChild(buttonText);
+  document.body.appendChild(button);
 
   init();
   tick();
@@ -28,10 +36,11 @@ let init = () => {
   if(data==null){
     data = [];
     for(let i=0; i<9; i++){
-      let x = (i % 3)*120+20;
-      let y = Math.floor(i/3)*120+20;
+      let x = (i % 3) * 120 + 20;
+      let y = Math.floor(i / 3) * 120 + 20;
       data.push(new Tile(x,y));
     }
+    data.forEach(el=> el.init());
   }
 
   player = Tile.NOUGHT;
@@ -44,6 +53,16 @@ let init = () => {
   console.log(ai.move());
 };
 
+let reset = () => {
+  //data = null;
+  //player = null;
+  //ai = null;
+  ctx.clearRect(0,0, canvas.width, canvas.height);
+  init();
+  tick();
+
+}
+
 let tick = () => {
   window.requestAnimationFrame(tick);
 
@@ -52,13 +71,13 @@ let tick = () => {
 };
 
 let update = () => {
-  let activeAnim = false;
+  let activeAnimation = false;
 
   for(let i = data.length; i--;){
     data[i].update();
-    activeAnim = activeAnim || data[i].active();
+    activeAnimation = activeAnimation || data[i].isActive();
   }
-  if(!activeAnim){
+  if(!activeAnimation){
     if(!aiMoved && !isPlayer){
       let move = ai.move();
       if(move === -1){
@@ -69,11 +88,11 @@ let update = () => {
 
     if (winner && !aiMoved) {
 				if (winner === true) {
-					 console.log("The game was a draw!");
+					 alert("The game was a draw!");
 				} else if (winner === Tile.NOUGHT) {
-					 console.log("The Kappa player won!");
+					 alert("The Kappa player won!");
 				} else {
-					 console.log("The PogChamp AI won!");
+					 alert("The PogChamp AI won!");
 				}
 			}
     aiMoved = true;
@@ -94,6 +113,7 @@ let render = () => {
 
 let mouseDown = evt => {
   if(!isPlayer) return;
+  if(ai.hasWinner()!==false) return;
   const el = evt.target;
 
   const positionX = evt.clientX - el.offsetLeft;
