@@ -13,7 +13,7 @@ A simple game with and implementation of an AI that uses a minimax algorithm to 
 
 ```bash
 git clone https://github.com/RicardasFaturovas/tic-tac-toe-typescript
-cd typescript-webpack-starter
+cd tic-tac-toe-typescript
 # Install the dependencies
 npm install
 ```
