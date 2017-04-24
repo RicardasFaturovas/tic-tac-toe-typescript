@@ -19,9 +19,10 @@ export default class Tile {
     Tile.context.strokeStyle = 'white'
 
     // BLANK
-    Tile.context.fillRect(0,0,100,100)
-    Tile.BLANK.crossOrigin = 'Anonymous'
-    Tile.BLANK.src = Tile.canvas.toDataURL()
+    Tile.BLANK.src = 'http://i.imgur.com/EAJ6RUW.png'
+    Tile.BLANK.onload = function () {
+      Tile.context.drawImage(Tile.BLANK, 20, 20)
+    }
 
     // KAPPA
     Tile.NOUGHT.src = 'http://i.picresize.com/images/2017/04/12/TqxYX.png'

@@ -147,7 +147,7 @@ export default class AIPlayer {
   /**
    * single line evaluation function
    * calculates score based on theses rules:
-   * 10 for EACH 3-in-a-line for computer.
+   * *10 for EACH 3-in-a-line for computer.
    * +10 for EACH two-in-a-line (with a empty cell) for computer.
    * +1 for EACH one-in-a-line (with two empty cells) for computer.
    * exactly same but negative scores for opponent
